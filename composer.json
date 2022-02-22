@@ -1,0 +1,21 @@
+{
+  "name": "devlulcas/phpunit",
+  "authors": [
+    {
+      "name": "lucas rego",
+      "email": "lucasalvesrego.contato@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "scripts": {
+    "dev": "xdg-open 'http://localhost:2339'; php -S localhost:2339",
+    "test": "./vendor/bin/pest"
+  },
+  "require-dev": {
+    "pestphp/pest": "^1.21"
+  }
+}
