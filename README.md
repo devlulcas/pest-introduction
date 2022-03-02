@@ -32,7 +32,7 @@ mkidr tests/Unit
 ./vendor/bin/pest
 ```
 
-## 🧐 Nomes dos teste no Pest
+## 🧐 Convenções de nomes de testes no Pest
 
 > No pest é necessário colocarmos um sufixo no nome dos nossos arquivos de testes. O sufixo será aquele definido no arquivo phpunit.xml. Por padrão o sufixo é Test.php.
 
@@ -77,6 +77,183 @@ it('garante que true é igual a true', function () {
 ```
 
 Basicamente a estrutura é composta pela chamada da função `test()` ou `it()` passando como parâmetro a mensagem do teste e a função que rodará o teste, essa função estende por padrão as funcionalidades da classe `TestCase`. A única diferença entre as duas é que quando usamos `it()` ele mostra a mensagem de teste com um "it" antes.
+
+## 📜 SCRIPTS ÚTEIS PARA RODAR SEUS TESTES
+
+Adicione os scripts abaixo em seu `composer.json` para facilitar a execução dos testes.
+
+```json
+"scripts": {
+    "dev": "xdg-open 'http://localhost:3333'; php -S localhost:3333",
+    "test": "./vendor/bin/pest",
+    "coverage": "./vendor/bin/pest --coverage"
+}
+```
+
+## 🧑‍⚖️ TESTES DE PRIMEIRA ORDEM
+
+```php
+// Código
+function fazedorDeCoisas(){
+    return true;
+}
+
+// Teste
+it("faz alguma coisa")->assertTrue(fazedorDeCoisas());
+
+// A linha acima equivale a:
+it("faz alguma coisa", function() {
+    $this->assertTrue(fazedorDeCoisas());
+});
+```
+
+## 🐸 PULANDO TESTES
+
+Podemos ligar métodos no fim da chamada do nosso método de testes. Nesse caso estamos usando o método `skip` para pular um teste.
+
+```php
+it("faz alguma coisa", function() {
+    $this->assertTrue(true);
+})->skip("porque não quero que este teste rode agora");
+```
+
+## 🚪TESTANDO COM DIVERSAS ENTRADAS
+
+Utilizando a ideia do método chamado no fim do `it` ou `test` podemos facilitar várias outras operações, como a de passar múltiplas fontes de dados para testar uma funcionalidade por exemplo.
+
+Com o método `with` nós podemos passar um array que servirá como fonte de dados para nossa função de testes.
+
+```php
+it("rejeita senhas inválidas", function($senha) {
+    $this->assertFalse(Validacao::senha($senha));
+})->with(["12345678", "abcde", "", "k1k2", "asdf2468"]);
+```
+
+Isso funciona bem para casos simples, mas quando há mais entradas ou caso você goste de deixar as coisas bem separadinhas é necessário separar os datasets do seu código de testes.
+
+Para fazer isso podemos criar uma pasta em `/tests/Datasets` para guardas nossos datasets.
+
+Neste caso podemos definir nosso dataset assim:
+
+```php
+// tests/Datasets/Dados.php
+dataset("identificador", function() {
+    return ["primeiro 🎲, segundo 🎲, terceiro 🎲"]
+});
+
+// tests/Unit/DadosTest.php
+it("tem dados de verdade", function($dados) {
+    $this->assertNotEmpty($dados);
+})->with("identificador");
+```
+
+## ⏰ EXECUTE ALGO ANTES DE CADA TESTE
+
+No Pest podemos especificar uma função que será executada antes de cada teste naquele determinado arquivo com a função `beforeEach` que significa literalmente `antesDeCada`.
+
+```php
+// Código
+function verificaSeTemUsuario() {
+    return true;
+}
+
+// Testes
+beforeEach(function() {
+    echo "Preparando o banco de dados...";
+});
+
+it("tem um usuário no banco")->assertTrue(verificaSeTemUsuario())
+```
+
+## 🤨 ASSERÇÕES E EXPECTATIVAS
+
+Quando escrevemos testes unitários devemos ser diretos em dizer o que esperamos que aconteça quando um determinado pedaço de código é executado. Para verificar se o retorno, alteração ou interação que o código testado bate com o que esperamos podemos usar asserções e expectativas.
+
+### 👉 ASSERÇÕES
+
+Fazem verificações para verificar se as coisas estão indo como o esperado.
+
+As asserções de um teste no Pest são métodos ligados ao $this, que por sua vez está ligado a uma classe de caso de teste. Isso acontece porque todo teste no Pest está ligado a uma classe de caso teste, mais especificamente a classe `PHPUnit\Framework\TestCase`. Graças a isso temos todo poder do PHPUnit em nossas mãos de forma mais simplificada.
+
+- [Asserções na documentação do Pest](https://pestphp.com/docs/assertions)
+- [Asserções na documentação do PHPUnit](https://phpunit.readthedocs.io/en/9.5/assertions.html)
+
+**Todas as asserções do PHPUnit estão disponíveis no Pest, para adicionar mais use a função `uses(CasoDeTesteEspecifico::class);`**
+
+```php
+it("testa se true é true mesmo", function() {
+    $this->assertTrue(true);
+});
+
+it("confirma que num está vazio", function() {
+    $this->assertNotEmpty("de fato não está vazio");
+});
+
+// Modo curto
+it("testa se true é true mesmo")->assertTrue(true);
+
+it("confirma que num está vazio")->assertNotEmpty("de fato não está vazio");
+```
+
+### 🥺 EXPECTATIVAS
+
+Em adição as asserções temos também as expectativas. Essa api, fortemente inspirada no [Jest](https://jestjs.io/docs/expect), fornece uma maneira de comparar o resultado da execução de um código contra uma série de expectativas.
+
+Desta forma você oferece ao seu código uma maneira de se sentir exatamente como você se sente em relação as expectativas dos seus pais. A decepção é inevitável, mas pelo menos estamos tentando.
+
+- [Lista de expectativas disponíveis no Pest](https://pestphp.com/docs/expectations)
+
+```php
+// Código
+class Filho
+{
+    private string profissao;
+    ...
+    public function getProfissao(): string {
+        return strtolower($this->profissao); // dev
+    }
+}
+
+enum Profissao: string
+{
+    case Medicina = "med";
+    case Desenvolvedor = "dev";
+    case FrancescoVirgolini = "la máquina más veloz de tote italie, fiaun";
+}
+```
+
+```php
+// Teste
+test("esperamos que sua profissão seja medicina", function() {
+    $filho = new Filho('eu');
+    expect(filho->getProfissao())->toBe(Profissao::MEDICINA);
+});
+```
+
+## 🛠️ PREPARO E DESMANTELAMENTO
+
+Como já foi citado anteriormente nós temos como executar métodos que são executados antes de cada teste, mas temos também métodos que podem ser executados depois de cada teste, antes de todos os testes e depois de todos os testes.
+
+```php
+// Rodará uma vez antes que cada um doss os testes daquele arquivo rodarem
+beforeEach(fn() => echo "Antes de cada teste neste arquivo eu vou rodar");
+```
+
+```php
+// Rodará uma vez depois que cada um doss os testes daquele arquivo rodarem
+afterEach(fn() => echo "Depois de cada teste neste arquivo eu vou rodar");
+
+```
+
+```php
+// Rodará uma vez antes que todos os testes daquele arquivo rodarem
+beforeAll(fn() => echo "Antes de todos os testes neste arquivo eu vou rodar");
+```
+
+```php
+// Rodará uma vez depois que todos os testes daquele arquivo rodarem
+afterAll(fn() => echo "Depois de todos os testes neste arquivo eu vou rodar");
+```
 
 ## ✍️ SOBRE COMO DESENVOLVER COM TDD E OS TRÊS TIPOS DE TESTES UNITÁRIOS
 
@@ -165,3 +342,7 @@ Podemos usar mocks, spies, stubs e fakes.
 Se a interação com esse outro código nos retorna um valor, nós podemos dar uma trapaceada e criar algo que retorna um valor estático.
 
 - **🤡 Um erro comum nesse tipo de testes é usar mocks que retornam mocks e que retornam mais mocks e assim criar um inferno de mocks. Criar fakes muito complexos também é má ideia.**
+
+```
+
+```

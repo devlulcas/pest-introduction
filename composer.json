@@ -12,8 +12,9 @@
     }
   },
   "scripts": {
-    "dev": "xdg-open 'http://localhost:2339'; php -S localhost:2339",
-    "test": "./vendor/bin/pest"
+    "dev": "xdg-open 'http://localhost:3333'; php -S localhost:3333",
+    "test": "./vendor/bin/pest",
+    "coverage": "./vendor/bin/pest --coverage"
   },
   "require-dev": {
     "pestphp/pest": "^1.21"
